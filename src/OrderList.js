@@ -41,34 +41,65 @@ export default function OrderList() {
     }
   };
 
-  const exportToExcel = () => {
-    const data = orders.map(order => ({
-      'Sipariş Sahibi': order.customerName,
-      'Araç': `${order.vehicleType} - ${order.vehiclePlate}`,
-      'Sürücü': `${order.driverName} (${order.driverPhone})`,
-      'Taşıma Tipi': order.shipmentType,
-      'Toplam Ağırlık': order.totalWeight,
-      'Ürünler': order.products?.map(p => `${p.productName} (${p.palletCount} palet, ${p.weight} kg)`).join('; '),
-      'Not': order.deliveryNote || '',
-      'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR')
-    }));
+const exportToExcel = () => {
+  // Her ürün için ayrı satır olacak şekilde veriyi yeniden düzenliyoruz
+  const data = [];
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    worksheet['!cols'] = [
-      { wch: 20 },
-      { wch: 25 },
-      { wch: 25 },
-      { wch: 18 },
-      { wch: 20 },
-      { wch: 40 },
-      { wch: 30 },
-      { wch: 20 }
-    ];
+  orders.forEach(order => {
+    if (order.products && order.products.length > 0) {
+      order.products.forEach(product => {
+        data.push({
+          'Order ID': order.id, // Order ID'yi ekledik
+          'Sipariş Sahibi': order.customerName,
+          'Araç': `${order.vehicleType} - ${order.vehiclePlate}`,
+          'Sürücü': `${order.driverName} (${order.driverPhone})`,
+          'Taşıma Tipi': order.shipmentType,
+          'Ürün': product.productName,
+          'Palet Sayısı': product.palletCount,
+          'Ürün Ağırlığı (kg)': product.weight,
+          'Toplam Sipariş Ağırlığı': order.totalWeight,
+          'Not': order.deliveryNote || '',
+          'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR')
+        });
+      });
+    } else {
+      // Ürünü olmayan sipariş varsa yine de bir satır ekleyelim
+      data.push({
+        'Order ID': order.id,
+        'Sipariş Sahibi': order.customerName,
+        'Araç': `${order.vehicleType} - ${order.vehiclePlate}`,
+        'Sürücü': `${order.driverName} (${order.driverPhone})`,
+        'Taşıma Tipi': order.shipmentType,
+        'Ürün': '',
+        'Palet Sayısı': '',
+        'Ürün Ağırlığı (kg)': '',
+        'Toplam Sipariş Ağırlığı': order.totalWeight,
+        'Not': order.deliveryNote || '',
+        'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR')
+      });
+    }
+  });
 
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Sipariş Detayları');
-    XLSX.writeFile(workbook, 'siparisler.xlsx');
-  };
+  const worksheet = XLSX.utils.json_to_sheet(data);
+
+  worksheet['!cols'] = [
+    { wch: 15 }, // Order ID
+    { wch: 20 }, // Sipariş Sahibi
+    { wch: 25 }, // Araç
+    { wch: 25 }, // Sürücü
+    { wch: 18 }, // Taşıma Tipi
+    { wch: 30 }, // Ürün
+    { wch: 15 }, // Palet Sayısı
+    { wch: 20 }, // Ürün Ağırlığı
+    { wch: 20 }, // Toplam Ağırlık
+    { wch: 30 }, // Not
+    { wch: 20 }  // Tarih
+  ];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Siparişler');
+  XLSX.writeFile(workbook, 'siparisler-ayrilmis.xlsx');
+};
 
   const filteredOrders = orders.filter(order =>
     order.products?.some(product =>
