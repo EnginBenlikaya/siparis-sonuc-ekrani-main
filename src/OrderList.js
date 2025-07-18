@@ -75,7 +75,8 @@ const exportToExcel = () => {
         'Ürün Ağırlığı (kg)': '',
         'Toplam Sipariş Ağırlığı': order.totalWeight,
         'Not': order.deliveryNote || '',
-        'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR')
+        'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR'),
+        'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR')
       });
     }
   });
