@@ -93,8 +93,9 @@ const exportToExcel = () => {
     { wch: 15 }, // Palet Sayısı
     { wch: 20 }, // Ürün Ağırlığı
     { wch: 20 }, // Toplam Ağırlık
-    { wch: 30 }, // Not
-    { wch: 20 }  // Tarih
+    { wch: 20 }, // Not
+    { wch: 20 }, // Tarih
+    { wch: 15 }  // Saat
   ];
 
   const workbook = XLSX.utils.book_new();
