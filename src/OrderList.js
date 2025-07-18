@@ -60,6 +60,7 @@ const exportToExcel = () => {
           'Toplam Sipariş Ağırlığı': order.totalWeight,
           'Not': order.deliveryNote || '',
           'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR')
+          'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR')
         });
       });
     } else {
@@ -100,7 +101,7 @@ const exportToExcel = () => {
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Siparişler');
-  XLSX.writeFile(workbook, 'siparisler-ayrilmis.xlsx');
+  XLSX.writeFile(workbook, 'siparisler.xlsx');
 };
 
   const filteredOrders = orders.filter(order =>
