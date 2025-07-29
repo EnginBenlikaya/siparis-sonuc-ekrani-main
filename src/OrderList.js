@@ -49,18 +49,20 @@ const exportToExcel = () => {
     if (order.products && order.products.length > 0) {
       order.products.forEach(product => {
         data.push({
+          'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR'),
+          'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR'),
           'Order ID': order.id, // Order ID'yi ekledik
           'Sipariş Sahibi': order.customerName,
-          'Araç': `${order.vehicleType} - ${order.vehiclePlate}`,
-          'Sürücü': `${order.driverName} (${order.driverPhone})`,
+          'Plaka': order.vehiclePlate,
+          'Sürücü': order.driverName,
+          'Telefon' : order.driverPhone,
           'Taşıma Tipi': order.shipmentType,
           'Ürün': product.productName,
           'Palet Sayısı': product.palletCount,
           'Ürün Ağırlığı (kg)': product.weight,
           'Toplam Sipariş Ağırlığı': order.totalWeight,
           'Not': order.deliveryNote || '',
-          'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR'),
-          'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR')
+          
         });
       });
     } else {
