@@ -8,6 +8,8 @@ import './OrderList.css';
 export default function OrderList() {
   const [orders, setOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOrders, setSelectedOrders] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,78 +43,112 @@ export default function OrderList() {
     }
   };
 
-const exportToExcel = () => {
-  // Her ürün için ayrı satır olacak şekilde veriyi yeniden düzenliyoruz
-  const data = [];
+  const handleSelectOrder = (id) => {
+    setSelectedOrders(prev =>
+      prev.includes(id) ? prev.filter(orderId => orderId !== id) : [...prev, id]
+    );
+  };
 
-  orders.forEach(order => {
-    if (order.products && order.products.length > 0) {
-      order.products.forEach(product => {
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders(filteredOrders.map(order => order.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedOrders.length === 0) return;
+    if (window.confirm(`${selectedOrders.length} siparişi silmek istediğinize emin misiniz?`)) {
+      try {
+        await Promise.all(
+          selectedOrders.map(id => deleteDoc(doc(db, 'orders', id)))
+        );
+        setSelectedOrders([]);
+        setSelectAll(false);
+        fetchOrders();
+      } catch (error) {
+        console.error('Toplu silme hatası:', error);
+      }
+    }
+  };
+
+  const exportToExcel = () => {
+    const data = [];
+    orders.forEach(order => {
+      if (order.products && order.products.length > 0) {
+        order.products.forEach(product => {
+          data.push({
+            'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR'),
+            'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR'),
+            'Order ID': order.id,
+            'Siparişi Oluşturan' : order.orderCreator,
+            'Müşteri Adı': order.customerName,
+            'Plaka': order.vehiclePlate,
+            'Sürücü': order.driverName,
+            'Telefon' : order.driverPhone,
+            'Taşıma Tipi': order.shipmentType,
+            'Ürün': product.productName,
+            'Palet Sayısı': product.palletCount,
+            'Ürün Ağırlığı (kg)': product.weight,
+            'Toplam Sipariş Ağırlığı': order.totalWeight,
+            'Not': order.deliveryNote || '',
+          });
+        });
+      } else {
         data.push({
-          'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR'),
-          'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR'),
-          'Order ID': order.id, // Order ID'yi ekledik
+          'Order ID': order.id,
           'Siparişi Oluşturan' : order.orderCreator,
           'Müşteri Adı': order.customerName,
-          'Plaka': order.vehiclePlate,
-          'Sürücü': order.driverName,
-          'Telefon' : order.driverPhone,
+          'Araç': `${order.vehicleType} - ${order.vehiclePlate}`,
+          'Sürücü': `${order.driverName} (${order.driverPhone})`,
           'Taşıma Tipi': order.shipmentType,
-          'Ürün': product.productName,
-          'Palet Sayısı': product.palletCount,
-          'Ürün Ağırlığı (kg)': product.weight,
+          'Ürün': '',
+          'Palet Sayısı': '',
+          'Ürün Ağırlığı (kg)': '',
           'Toplam Sipariş Ağırlığı': order.totalWeight,
           'Not': order.deliveryNote || '',
-
+          'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR'),
+          'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR')
         });
-      });
-    } else {
-      // Ürünü olmayan sipariş varsa yine de bir satır ekleyelim
-      data.push({
-        'Order ID': order.id,
-        'Siparişi Oluşturan' : order.orderCreator,
-        'Müşteri Adı': order.customerName,
-        'Araç': `${order.vehicleType} - ${order.vehiclePlate}`,
-        'Sürücü': `${order.driverName} (${order.driverPhone})`,
-        'Taşıma Tipi': order.shipmentType,
-        'Ürün': '',
-        'Palet Sayısı': '',
-        'Ürün Ağırlığı (kg)': '',
-        'Toplam Sipariş Ağırlığı': order.totalWeight,
-        'Not': order.deliveryNote || '',
-        'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR'),
-        'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR')
-      });
-    }
-  });
+      }
+    });
 
-  const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(data);
 
-  worksheet['!cols'] = [
-    { wch: 15 }, // Order ID
-    { wch: 20 }, // Sipariş Sahibi
-    { wch: 25 }, // Araç
-    { wch: 25 }, // Sürücü
-    { wch: 18 }, // Taşıma Tipi
-    { wch: 30 }, // Ürün
-    { wch: 15 }, // Palet Sayısı
-    { wch: 20 }, // Ürün Ağırlığı
-    { wch: 20 }, // Toplam Ağırlık
-    { wch: 20 }, // Not
-    { wch: 20 }, // Tarih
-    { wch: 15 }  // Saat
-  ];
+    worksheet['!cols'] = [
+      { wch: 15 }, // Order ID
+      { wch: 20 }, // Sipariş Sahibi
+      { wch: 25 }, // Araç
+      { wch: 25 }, // Sürücü
+      { wch: 18 }, // Taşıma Tipi
+      { wch: 30 }, // Ürün
+      { wch: 15 }, // Palet Sayısı
+      { wch: 20 }, // Ürün Ağırlığı
+      { wch: 20 }, // Toplam Ağırlık
+      { wch: 20 }, // Not
+      { wch: 20 }, // Tarih
+      { wch: 15 }  // Saat
+    ];
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Siparişler');
-  XLSX.writeFile(workbook, 'siparisler.xlsx');
-};
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Siparişler');
+    XLSX.writeFile(workbook, 'siparisler.xlsx');
+  };
 
   const filteredOrders = orders.filter(order =>
     order.products?.some(product =>
       product.productName.toLowerCase().includes(searchQuery.toLowerCase())
     )
   );
+
+  useEffect(() => {
+    // Eğer filtre değişirse, seçili olanları güncelle
+    if (selectAll) {
+      setSelectedOrders(filteredOrders.map(order => order.id));
+    }
+  }, [filteredOrders, selectAll]);
 
   return (
     <div className="container">
@@ -124,12 +160,36 @@ const exportToExcel = () => {
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
       />
+      <div style={{ margin: '10px 0' }}>
+        <input
+          type="checkbox"
+          checked={selectAll}
+          onChange={handleSelectAll}
+        /> Tümünü Seç
+        <button
+          className="delete"
+          style={{ marginLeft: 10 }}
+          onClick={handleDeleteSelected}
+          disabled={selectedOrders.length === 0}
+        >
+          Seçilenleri Sil
+        </button>
+      </div>
       {filteredOrders.length === 0 ? (
         <p className="empty">🙈 Oppsss! Hiç veri yok</p>
       ) : (
         <div className="list">
           {filteredOrders.map(order => (
-            <div key={order.id} className="card" onClick={() => navigate(`/order/${order.id}`)} style={{ cursor: 'pointer' }}>
+            <div key={order.id} className="card" onClick={() => navigate(`/order/${order.id}`)} style={{ cursor: 'pointer', position: 'relative' }}>
+              <input
+                type="checkbox"
+                checked={selectedOrders.includes(order.id)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleSelectOrder(order.id);
+                }}
+                style={{ position: 'absolute', left: 10, top: 10 }}
+              />
               <div className="top-row">
                 <span className="date">📅 {new Date(order.createdAt * 1000).toLocaleDateString('tr-TR')}</span>
                 <button className="delete" onClick={(e) => handleDelete(order.id, e)}>🗑️</button>
