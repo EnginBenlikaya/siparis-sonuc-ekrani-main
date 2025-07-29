@@ -52,7 +52,8 @@ const exportToExcel = () => {
           'Tarih': new Date(order.createdAt * 1000).toLocaleDateString('tr-TR'),
           'Saat': new Date(order.createdAt * 1000).toLocaleTimeString('tr-TR'),
           'Order ID': order.id, // Order ID'yi ekledik
-          'Sipariş Sahibi': order.customerName,
+          'Siparişi Oluşturan' : order.orderCreator,
+          'Müşteri Adı': order.customerName,
           'Plaka': order.vehiclePlate,
           'Sürücü': order.driverName,
           'Telefon' : order.driverPhone,
@@ -62,14 +63,15 @@ const exportToExcel = () => {
           'Ürün Ağırlığı (kg)': product.weight,
           'Toplam Sipariş Ağırlığı': order.totalWeight,
           'Not': order.deliveryNote || '',
-          
+
         });
       });
     } else {
       // Ürünü olmayan sipariş varsa yine de bir satır ekleyelim
       data.push({
         'Order ID': order.id,
-        'Sipariş Sahibi': order.customerName,
+        'Siparişi Oluşturan' : order.orderCreator,
+        'Müşteri Adı': order.customerName,
         'Araç': `${order.vehicleType} - ${order.vehiclePlate}`,
         'Sürücü': `${order.driverName} (${order.driverPhone})`,
         'Taşıma Tipi': order.shipmentType,
